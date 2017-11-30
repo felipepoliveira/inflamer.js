@@ -5,7 +5,7 @@
  */
 var Inflamer = {
 
-    adaptToScreen : function(){
+    fitToScreen : function(){
         this._canvas.width = window.innerWidth;
         this._canvas.height = window.innerHeight;
     },
@@ -17,15 +17,26 @@ var Inflamer = {
         }
     },
 
+    new : {
+        /**
+         * Create an new InflamerFont object
+         * @param {string} f - The font family: "Arial", "Conslas", etc.
+         * @param {string} s - The font size with the font unit: "38px".
+         */
+        font : function(f, s){
+            return new InflamerFont(f , s);
+        },
+    },
+
     fullScreen : function(){
         window.addEventListener('resize', function (){
-            Inflamer.adaptToScreen();
+            Inflamer.fitToScreen();
         });
 
         this._canvas.style.position = "fixed";
         this._canvas.style.left = "0px";
         this._canvas.style.top = "0px";
-        this.adaptToScreen();
+        this.fitToScreen();
         this.loadGraphicsContext();
     },
 
@@ -55,7 +66,8 @@ var Inflamer = {
     },
 
     loadGraphicsContext : function(){
-        this._context = this._canvas.getContext("2d");
+        let ctx2d = this._canvas.getContext("2d");
+        this._context = new InflamerRenderingContext2d(ctx2d);
     },
 
     /**
@@ -135,7 +147,7 @@ var Inflamer = {
 
     _render : function(ctx, engine){
         //Clear the canvas area
-        ctx.clearRect(0, 0, this.width(), this.height());
+        ctx.clear();
         if(this._scene){
             this._scene.render(ctx, engine);
         }
@@ -199,6 +211,61 @@ var Inflamer = {
 
     ,
 };
+
+/**
+ * Represent an font that is used inside the application. The instance of this object
+ * must be created with Inflamer.font function
+ * @see Inflamer.font
+ */
+class InflamerFont{
+    constructor(family, size){
+        if(!family) throw "You must specify an valid font family. \"" + family + "\" given.";
+
+        this._fontFamily = family;
+        this._fontSize = size || 10;
+        this._fontSizeUnit = "px";
+
+        if(size){
+            let locate;
+
+            //Font size
+            locate = this.sizeRegex.locate(size);
+            if(locate){
+                this._fontSize = Number(size.substring(locate[0], locate[1]));
+            }
+
+            //Font unit
+            locate = this.sizeUnitRegex.locate(size);
+            if(locate){
+                this._fontSizeUnit = size.substring(locate[0], locate[1]);
+            }
+        }
+    }
+
+    get family(){
+        return this._fontFamily;
+    }
+
+    get size(){
+        return this._fontSize;
+    }
+
+    get unit(){
+        return this._fontSizeUnit;
+    }
+
+    get sizeRegex(){
+        return /\d+/;
+    }
+
+    get sizeUnitRegex(){
+        return /[a-zA-Z]+/;
+    }
+
+    toString(){
+        return this._fontSize + this._fontSizeUnit + " " + this._fontFamily;
+    }
+}
 
 function Entity(){
     /**
